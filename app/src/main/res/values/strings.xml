@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Android JSON Tutorial</string>
+
+    <string name="fragment_profile">Profile</string>
+    <string name="fragment_subreddit">Subreddit</string>
+
+    <string name="profile_preferences_key">profile_preferences_key</string>
+
+
+</resources>

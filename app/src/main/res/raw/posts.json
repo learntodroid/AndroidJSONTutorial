@@ -1,0 +1,9 @@
+{
+  "test": "hello",
+  "test2": 1.0,
+  "test3": 100,
+  "test4": true,
+  "test5": {
+    "test6": "nested"
+  }
+}

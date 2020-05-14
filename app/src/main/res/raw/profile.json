@@ -1,0 +1,9 @@
+{
+  "name": "Bob Jones",
+  "hobbies": [ "Android", "Programming", "Reading" ],
+  "age": 38,
+  "images": {
+    "profile_image_uri": "https://images.pexels.com/photos/834863/pexels-photo-834863.jpeg?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260",
+    "background_image_uri": "https://images.pexels.com/photos/949587/pexels-photo-949587.jpeg?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260"
+  }
+}
