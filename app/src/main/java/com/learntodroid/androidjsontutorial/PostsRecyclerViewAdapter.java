@@ -43,19 +43,16 @@ public class PostsRecyclerViewAdapter extends RecyclerView.Adapter<PostsRecycler
     class PostViewHolder extends RecyclerView.ViewHolder {
         TextView title;
         TextView stats;
-        TextView created;
 
         public PostViewHolder(@NonNull View itemView) {
             super(itemView);
             title = itemView.findViewById(R.id.item_post_title);
             stats = itemView.findViewById(R.id.item_post_stats);
-            created = itemView.findViewById(R.id.item_post_created);
         }
 
         public void bind(Post post) {
             title.setText(post.getTitle());
             stats.setText(String.format("Score: %d | Comments: %d", post.getScore(), post.getCommentCount()));
-            created.setText(String.valueOf(post.getCreated()));
         }
     }
 }

@@ -1,16 +1,21 @@
 package com.learntodroid.androidjsontutorial;
 
-public class Post {
-    private String title;
-    private int score;
-    private int commentCount;
-    private double created;
+import com.google.gson.annotations.SerializedName;
 
-    public Post(String title, int score, int commentCount, double created) {
+public class Post {
+    @SerializedName("title")
+    private String title;
+
+    @SerializedName("score")
+    private int score;
+
+    @SerializedName("num_comments")
+    private int commentCount;
+
+    public Post(String title, int score, int commentCount) {
         this.title = title;
         this.score = score;
         this.commentCount = commentCount;
-        this.created = created;
     }
 
     public String getTitle() {
@@ -23,9 +28,5 @@ public class Post {
 
     public int getCommentCount() {
         return commentCount;
-    }
-
-    public double getCreated() {
-        return created;
     }
 }

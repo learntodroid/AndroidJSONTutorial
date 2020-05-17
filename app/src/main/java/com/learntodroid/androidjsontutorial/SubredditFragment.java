@@ -1,6 +1,8 @@
 package com.learntodroid.androidjsontutorial;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,13 +21,26 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.google.gson.Gson;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+
+import okhttp3.ResponseBody;
+import retrofit2.Call;
+import retrofit2.Callback;
 
 public class SubredditFragment extends Fragment {
     private EditText subreddit;
@@ -51,7 +66,9 @@ public class SubredditFragment extends Fragment {
         getPostsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getPosts();
+//                getPostsUsingVolley();
+//                getPostsUsingRetrofit();
+//                getPostsUsingRetrofitWithGSON();
             }
         });
 
@@ -60,15 +77,17 @@ public class SubredditFragment extends Fragment {
 
         postsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         postsRecyclerView.setAdapter(postsRecyclerViewAdapter);
-
-//        readLocalJsonFile();
-//        writeLocalJsonFile();
+        
+        try {
+            readJSONFile("posts.json");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         return view;
     }
 
-
-    private void getPosts() {
+    private void getPostsUsingVolley() {
         String uri = String.format("https://www.reddit.com/r/%s.json", subreddit.getText().toString());
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(
                 Request.Method.GET,
@@ -84,8 +103,7 @@ public class SubredditFragment extends Fragment {
                                 String postTitle = postsJson.getJSONObject(i).getJSONObject("data").getString("title");
                                 int postScore = postsJson.getJSONObject(i).getJSONObject("data").getInt("score");
                                 int postComments = postsJson.getJSONObject(i).getJSONObject("data").getInt("num_comments");
-                                double postCreated = postsJson.getJSONObject(i).getJSONObject("data").getDouble("created");
-                                Post post = new Post(postTitle, postScore, postComments, postCreated);
+                                Post post = new Post(postTitle, postScore, postComments);
                                 posts.add(post);
                             }
                             postsRecyclerViewAdapter.setPosts(posts);
@@ -105,58 +123,108 @@ public class SubredditFragment extends Fragment {
 
         MyRequestQueue.getInstance(getContext()).addToRequestQueue(jsonObjectRequest);
     }
-/*
-    private void parseJSON() {
-        String jsonString = "{ \"test\": \"hello\", \"test2\": 1.0, \"test3\": 100, \"test4\": true, \"test5\": { \"test6\": \"nested\" }}";
-        try {
-            JSONObject jsonObject = new JSONObject(jsonString);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+
+    private void getPostsUsingRetrofit() {
+        MyRetrofitClient.getInstance(getContext()).getRedditPostsService().getPosts(subreddit.getText().toString())
+                .enqueue(new Callback<ResponseBody>() {
+                    @Override
+                    public void onResponse(Call<ResponseBody> call, retrofit2.Response<ResponseBody> response) {
+                        try {
+                            posts = new ArrayList<>();
+
+                            String responseJSONString = response.body().string();
+                            JSONObject responseJSON = new JSONObject(responseJSONString);
+
+                            JSONArray postsJson = responseJSON.getJSONObject("data").getJSONArray("children");
+                            for (int i = 0; i < postsJson.length(); i++) {
+                                String postTitle = postsJson.getJSONObject(i).getJSONObject("data").getString("title");
+                                int postScore = postsJson.getJSONObject(i).getJSONObject("data").getInt("score");
+                                int postComments = postsJson.getJSONObject(i).getJSONObject("data").getInt("num_comments");
+                                Post post = new Post(postTitle, postScore, postComments);
+                                posts.add(post);
+                            }
+                            postsRecyclerViewAdapter.setPosts(posts);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<ResponseBody> call, Throwable t) {
+                        Log.i("onFailure", t.getMessage());
+                        Toast.makeText(getContext(), t.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+        });
     }
 
-    private void readLocalJsonFile() {
-        // todo make the file the same used for writing and reading
-        try {
-            InputStream inputStream = getResources().openRawResource(R.raw.posts);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-            List<String> lines = new ArrayList<String>();
-            String line = reader.readLine();
-            while (line != null) {
-                lines.add(line);
-                line = reader.readLine();
-            }
+    private void getPostsUsingRetrofitWithGSON() {
+        MyRetrofitClient.getInstance(getContext()).getRedditPostsService().getPosts(subreddit.getText().toString())
+                .enqueue(new Callback<ResponseBody>() {
+                    @Override
+                    public void onResponse(Call<ResponseBody> call, retrofit2.Response<ResponseBody> response) {
+                        try {
+                            posts = new ArrayList<>();
 
-            String jsonString = TextUtils.join("", lines);
-            JSONObject jsonObject = new JSONObject(jsonString);
-            Toast.makeText(getApplicationContext(), jsonObject.getString("test"), Toast.LENGTH_SHORT).show();
+                            String responseJSONString = response.body().string();
+                            JSONObject responseJSON = new JSONObject(responseJSONString);
 
+                            JSONArray postsJson = responseJSON.getJSONObject("data").getJSONArray("children");
+                            for (int i = 0; i < postsJson.length(); i++) {
+                                Post post = convertJSONToPost(postsJson.getJSONObject(i).getJSONObject("data").toString());
+                                posts.add(post);
+                            }
+                            postsRecyclerViewAdapter.setPosts(posts);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
 
-            Toast.makeText(getApplicationContext(), TextUtils.join("\n", lines), Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
+                    @Override
+                    public void onFailure(Call<ResponseBody> call, Throwable t) {
+                        Log.i("onFailure", t.getMessage());
+                        Toast.makeText(getContext(), t.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
-    private void writeLocalJsonFile() {
-        // todo write to the same file read from internal storage
-        JSONObject jsonObject = new JSONObject();
-        try {
-            jsonObject.put("test", "hello");
-            jsonObject.put("test2", 1.0);
-            jsonObject.put("test3", 100);
-            jsonObject.put("test4", true);
+    private Post convertJSONToPost(String json) {
+        Gson gson = new Gson();
+        return gson.fromJson(json, Post.class);
+    }
 
-            JSONObject nestedJsonObject = new JSONObject();
-            nestedJsonObject.put("test6", "nested");
+    private String convertPostToJson(Post post) {
+        Gson gson = new Gson();
+        return gson.toJson(post);
+    }
 
-            jsonObject.put("test5", nestedJsonObject);
-
-            String jsonString = jsonObject.toString();
-            Log.i("write", jsonString);
-        } catch (JSONException e) {
-            e.printStackTrace();
+    private void writeJSONFile(String json, String fileName) throws IOException {
+        File file = new File(getContext().getFilesDir(), fileName);
+        if (!file.exists()) {
+            file.createNewFile();
         }
-    }*/
+
+        FileOutputStream fileOutputStream = getContext().openFileOutput(fileName, Context.MODE_PRIVATE);
+        fileOutputStream.write(json.getBytes(Charset.forName("UTF-8")));
+    }
+
+    private String readJSONFile(String fileName) throws IOException {
+        FileInputStream fileInputStream = getContext().openFileInput(fileName);
+        InputStreamReader inputStreamReader = new InputStreamReader(fileInputStream, Charset.forName("UTF-8"));
+        List<String> lines = new ArrayList<String>();
+        BufferedReader reader = new BufferedReader(inputStreamReader);
+        String line = reader.readLine();
+        while (line != null) {
+            lines.add(line);
+            line = reader.readLine();
+        }
+        String json = TextUtils.join("\n", lines);
+
+        Toast.makeText(getContext(), json, Toast.LENGTH_SHORT).show();
+
+        return json;
+    }
 }

@@ -80,7 +80,7 @@ public class ProfileFragment extends Fragment {
                 .circleCrop()
                 .into(profileImage);
 
-        Toast.makeText(getContext(), profileJson, Toast.LENGTH_LONG).show();
+//        Toast.makeText(getContext(), profileJson, Toast.LENGTH_LONG).show();
     }
 
     private void saveProfile() throws JSONException {
@@ -108,7 +108,7 @@ public class ProfileFragment extends Fragment {
         editor.putString(getString(R.string.profile_preferences_key), profileJsonObject.toString());
         editor.commit();
 
-        Toast.makeText(getContext(), profileJsonObject.toString(), Toast.LENGTH_LONG).show();
+//        Toast.makeText(getContext(), profileJsonObject.toString(), Toast.LENGTH_LONG).show();
     }
 
     @Nullable
